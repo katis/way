@@ -115,8 +115,8 @@ function Routes() {
 
 ### Custom query codec
 
-A query codec is an object that converts query string to object and back.
-It doesn't validate types, you need to use a library like Zod for that.
+A query codec is an object that converts a query string to an object and back.
+It doesn't validate types, you can use a library like Zod for that.
 
 ```ts
 import queryString from "query-string";
