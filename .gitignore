@@ -1,3 +1,7 @@
-node_modules/
-dist/
 .vscode/
+dist/
+node_modules/
+package/
+
+.DS_Store
+*.tgz
