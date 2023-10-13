@@ -30,6 +30,10 @@
       }
     }
   },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
   "scripts": {
     "build": "npm run build:tsc && npm run build:tsup",
     "build:tsup": "tsup --dts --format esm,cjs src/index.ts",
