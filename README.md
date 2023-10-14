@@ -31,7 +31,7 @@ Here's an example of the features of the library:
 
 ```typescript
 import { way } from "@katis/way";
-import { zod } from "zod";
+import zod from "zod";
 
 // Query parameters can be parsed into a type safe object by implementing a QueryParser.
 // way can use Zod types out of the box as a QueryParser.
