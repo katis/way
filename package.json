@@ -1,6 +1,6 @@
 {
   "name": "@katis/way",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Create type-safe URL path builders using Proxies",
   "author": "Joni Katajamäki",
   "license": "ISC",

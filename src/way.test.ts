@@ -28,7 +28,7 @@ describe("way", () => {
 
   it("builds path with query ending in named segment", () => {
     const path = root.productCatalog["1234"].edit({ dirty: true });
-    const query = way.parseQuery(root.productCatalog["id"].edit, search(path));
+    const query = root.productCatalog["id"].edit(way.query, search(path));
     query satisfies ProductEditQuery;
 
     expect(path).toBe("/product-catalog/1234/edit?dirty=true");
@@ -39,10 +39,7 @@ describe("way", () => {
     const path = root.productCatalog["1234"]({
       modal: true,
     });
-    const query = way.parseQuery(
-      root.productCatalog["product-id"],
-      search(path)
-    );
+    const query = root.productCatalog["product-id"](way.query, search(path));
     query satisfies ProductQuery;
 
     expect(path).toBe("/product-catalog/1234?modal=true");
@@ -68,9 +65,16 @@ describe("way", () => {
     );
   });
 
+  it("formats as string", () => {
+    const path = root.productCatalog["1234"];
+    const rel = root(way.rel).productCatalog["1234"];
+    expect(`${path}`).toEqual("/product-catalog/1234");
+    expect(`${rel}`).toEqual("product-catalog/1234");
+  });
+
   it("throws error on invalid query parameter", () => {
     expect(() =>
-      console.log(way.parseQuery(root.productCatalog.edit, "dirty=asdf"))
+      console.log(root.productCatalog.edit(way.query, "dirty=asdf"))
     ).toThrow();
   });
 
@@ -101,12 +105,12 @@ describe("way", () => {
       expect(() => {
         const anyRoot = root as any;
         anyRoot.foo.bar(way.rel);
-      }).toThrowError("Tried to build path that doesn't match the schema");
+      }).toThrowError("Path foo/bar has no configured schema");
 
       expect(() => {
         const anyRoot = root as any;
         anyRoot.products["123"].foo(way.rel);
-      }).toThrowError("Tried to build path that doesn't match the schema");
+      }).toThrowError("Path products/123/foo has no configured schema");
     });
   });
 

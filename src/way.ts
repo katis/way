@@ -17,6 +17,11 @@ export const rel: unique symbol = Symbol("way/relative");
 /** Pass to path to create a new builder relative to the path.  */
 export type rel = typeof rel;
 
+/** Pass to path to parse a search string.  */
+export const query: unique symbol = Symbol("way/query");
+/** Pass to path to parse a search string.  */
+export type query = typeof query;
+
 /** Create a root config  */
 export const root = <S extends Schema>(
   schema: S,
@@ -71,7 +76,7 @@ export interface Segment {
 /** A segment of a typed path that can build a path string with optional query parameter. */
 export type PathSegment<Q> = Segment &
   BuildPath<Q> & {
-    [$queryParser]: QueryParserResult<Q>;
+    (querySymbol: query, search: string): Q;
   };
 
 /** Build a path string, with a provided query parameter. */
@@ -103,22 +108,6 @@ export const AnyQuery: QueryParser<AnyQuery> = {
   parse: (query) => query,
 };
 
-/**
- * Parse the query using the segments QueryParser.
- *
- * If query is a string, it will be parsed using the configured codec.
- */
-export const parseQuery = <Q>(
-  segment: PathSegment<Q>,
-  query: string | AnyQuery
-) => {
-  const { codec, parser } = segment[$queryParser];
-  return parser.parse(typeof query === "string" ? codec.decode(query) : query);
-};
-
-const $queryParser: unique symbol = Symbol("way/queryParser");
-type $queryParser = typeof $queryParser;
-
 type ProxyTarget = ((query?: unknown) => string) & {
   schema: Schema;
   parts: readonly string[];
@@ -137,49 +126,58 @@ const proxyTarget = (
   config: RootConfig,
   parts: readonly string[]
 ): ProxyTarget => {
-  function pathBuilder(_query?: unknown): string {
+  function wayPath(_query?: unknown): string {
     throw new Error("This should never be called, please file an issue");
   }
-  return Object.assign(pathBuilder, { schema, config, parts });
+  return Object.assign(wayPath, { schema, config, parts });
 };
 
 const target: ProxyHandler<ProxyTarget> = {
   get(
     { schema, config, parts },
-    prop: string | $queryParser | route
-  ): PathBuilder<any> | QueryParserResult<any> | string | undefined {
+    prop: string | symbol
+  ): PathBuilder<any> | (() => string) | undefined {
     if (typeof prop === "string")
       return proxyPathBuilder(schema, config, [...parts, prop]);
-    if (prop === $queryParser)
-      return {
-        codec: config.codec,
-        parser: getSchema(schema, parts)?.[path] || NoQuery,
-      };
+    if (prop === Symbol.toPrimitive) return () => buildPath(config, parts);
   },
   apply(
     { schema, config, parts },
     _self,
-    [arg]: Args
-  ): string | PathBuilder<any> {
+    [arg, search]: ApplyArgs
+  ): string | PathBuilder<any> | AnyQuery | undefined {
     if (typeof arg === "symbol") {
-      if (arg === route) return buildPath(config, parts);
-      else if (arg === rel) {
-        const relativeSchema = getSchema(schema, parts);
-        if (!relativeSchema)
-          throw Error("Tried to build path that doesn't match the schema");
-        return proxyPathBuilder(
-          relativeSchema,
-          { ...config, relative: true },
-          []
-        );
+      switch (arg) {
+        case route:
+          return buildPath(config, parts);
+        case rel: {
+          return proxyPathBuilder(
+            getSchema(schema, parts),
+            { ...config, relative: true },
+            []
+          );
+        }
+        case query: {
+          if (search === undefined)
+            throw Error("No search string provided with way.query");
+          const parser = getSchema(schema, parts)?.[path] || NoQuery;
+          return parser.parse(
+            typeof search === "string" ? config.codec.decode(search) : search
+          );
+        }
+        default:
+          throw Error(`Invalid symbol ${arg} provided to path builder`);
       }
-      throw Error("Invalid symbol argument provided to path builder");
     }
     return buildPath(config, parts, arg);
   },
 };
 
-type Args = [rel | route | AnyQuery | undefined, ...unknown[]];
+type ApplyArgs = [
+  query | rel | route | AnyQuery | undefined,
+  string | AnyQuery | undefined,
+  ...unknown[]
+];
 
 const buildPath = (
   config: RootConfig,
@@ -195,14 +193,12 @@ const buildPath = (
   return path;
 };
 
-const getSchema = (
-  schema: Schema,
-  parts: readonly string[]
-): Schema | undefined => {
+const getSchema = (schema: Schema, parts: readonly string[]): Schema => {
   let current: Schema | undefined = schema;
   for (const part of parts) {
     current = current[part] ?? current[$param];
-    if (!current) return undefined;
+    if (!current)
+      throw Error(`Path ${parts.join("/")} has no configured schema`);
   }
   return current;
 };

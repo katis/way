@@ -1,13 +1,5 @@
-export { type QueryCodec, urlSearchParamsCodec } from "./codec.js";
-export {
-  AnyQuery,
-  NoQuery,
-  path,
-  rel,
-  parseQuery,
-  root,
-  route,
-} from "./way.js";
+export type { QueryCodec } from "./codec.js";
+export { AnyQuery, NoQuery, path, rel, root, route, query } from "./way.js";
 export type {
   BuildPath,
   RootConfig,

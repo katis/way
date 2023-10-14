@@ -76,7 +76,7 @@ const detailsB = root.products["prod-b"].details();
 // detailsB = /products/prod-b/details
 
 // Decode and parse a query string into a type safe object.
-const query = way.parseQuery(root.products["productId"], "modal=true");
+const query = root.products["productId"](way.query, "modal=true");
 // query = { modal: "true" }
 ```
 
@@ -133,7 +133,7 @@ const RootQuery = zod.object({
 const root = way.root(schema, { codec });
 
 const search = "?modal=true";
-const query = way.parseQuery(root.products["1234"], search);
+const query = root.products["1234"](way.query, search);
 // query = { modal: true }
 ```
 
