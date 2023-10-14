@@ -1,6 +1,6 @@
 {
   "name": "@katis/way",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Create type-safe URL path builders using Proxies",
   "author": "Joni Katajamäki",
   "license": "ISC",
@@ -14,19 +14,18 @@
     "route",
     "proxy"
   ],
-  "type": "module",
-  "module": "dist/index.js",
-  "main": "dist/index.cjs",
-  "types": "dist/index.d.ts",
+  "module": "dist/esm/index.js",
+  "main": "dist/cjs/index.js",
+  "types": "dist/cjs/index.d.ts",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
       },
       "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
       }
     }
   },
@@ -35,7 +34,11 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup --dts --format esm,cjs src/index.ts",
+    "build": "npm run tsc:esm && npm run tsc:cjs && npm run gen-package-json",
+    "gen-package-json": "node package.js",
+    "tsc:esm": "tsc --project tsconfig.esm.json",
+    "tsc:cjs": "tsc --project tsconfig.cjs.json",
+    "rename-cjs": "find ./dist/cjs -type f \\( -name \"*.ts\" -o -name \"*.js\" \\) -exec sh -c 'mv \"$0\" \"${0%.*}.c${0##*.}\"' {} \\;",
     "test": "vitest",
     "prepublishOnly": "npm run build"
   },

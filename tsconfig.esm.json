@@ -2,8 +2,11 @@
   "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
     "verbatimModuleSyntax": false,
-    "module": "CommonJS",
+    "outDir": "dist/esm",
+    "declaration": true,
+    "module": "ES2022",
     "moduleResolution": "Node"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }
