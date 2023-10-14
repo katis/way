@@ -46,6 +46,11 @@ describe("way", () => {
     expect(query).toEqual({ modal: true });
   });
 
+  it("handles reserved symbols in query parameters", () => {
+    const path = root({ date: "2020/01/01", search: "shoes&socks" });
+    expect(path).toBe("/?date=2020%2F01%2F01&search=shoes%26socks");
+  });
+
   it("builds path without query ending in named segment", () => {
     const path = root.faq();
     expect(path).toBe("/faq");
@@ -58,6 +63,12 @@ describe("way", () => {
     expect(root.products["1234"]({ modal: true })).toBe(
       "/products/1234?modal=true"
     );
+  });
+
+  it("throws error on invalid query parameter", () => {
+    expect(() =>
+      console.log(way.parseQuery(root.products.edit, "dirty=asdf"))
+    ).toThrow();
   });
 
   describe("relative paths", () => {
@@ -111,6 +122,7 @@ describe("way", () => {
 
 const QueryBool = zod
   .enum(["true", "false"])
+  .default("false")
   .transform((arg) => arg === "true");
 
 type RootQuery = zod.infer<typeof RootQuery>;
