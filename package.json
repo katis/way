@@ -36,7 +36,8 @@
   ],
   "scripts": {
     "build": "tsup --dts --format esm,cjs src/index.ts",
-    "test": "vitest"
+    "test": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
