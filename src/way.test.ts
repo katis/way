@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import * as way from "./way.js";
+import * as way from "./way-module.js";
 import * as zod from "zod";
 
 describe("way", () => {
   const schema = {
     [way.path]: RootQuery,
-    faq: { [way.path]: way.NoQuery },
-    products: {
-      [way.param]: {
+    deliveryFAQ: { [way.path]: way.NoQuery },
+    productCatalog: {
+      [way.param.productId]: {
         [way.path]: ProductQuery,
         details: { [way.path]: way.NoQuery },
         edit: { [way.path]: ProductEditQuery },
@@ -27,22 +27,25 @@ describe("way", () => {
   });
 
   it("builds path with query ending in named segment", () => {
-    const path = root.products["1234"].edit({ dirty: true });
-    const query = way.parseQuery(root.products["id"].edit, getSearch(path));
+    const path = root.productCatalog["1234"].edit({ dirty: true });
+    const query = way.parseQuery(root.productCatalog["id"].edit, search(path));
     query satisfies ProductEditQuery;
 
-    expect(path).toBe("/products/1234/edit?dirty=true");
+    expect(path).toBe("/product-catalog/1234/edit?dirty=true");
     expect(query).toEqual({ dirty: true });
   });
 
   it("builds path with query ending in parameter segment", () => {
-    const path = root.products["1234"]({
+    const path = root.productCatalog["1234"]({
       modal: true,
     });
-    const query = way.parseQuery(root.products["product-id"], getSearch(path));
+    const query = way.parseQuery(
+      root.productCatalog["product-id"],
+      search(path)
+    );
     query satisfies ProductQuery;
 
-    expect(path).toBe("/products/1234?modal=true");
+    expect(path).toBe("/product-catalog/1234?modal=true");
     expect(query).toEqual({ modal: true });
   });
 
@@ -52,35 +55,42 @@ describe("way", () => {
   });
 
   it("builds path without query ending in named segment", () => {
-    const path = root.faq();
-    expect(path).toBe("/faq");
+    const path = root.deliveryFAQ();
+    expect(path).toBe("/delivery-faq");
   });
 
   it("builds path in a mixed named and parameter segment", () => {
-    expect(root.products.edit({ dirty: true })).toBe(
-      "/products/edit?dirty=true"
+    expect(root.productCatalog.edit({ dirty: true })).toBe(
+      "/product-catalog/edit?dirty=true"
     );
-    expect(root.products["1234"]({ modal: true })).toBe(
-      "/products/1234?modal=true"
+    expect(root.productCatalog["1234"]({ modal: true })).toBe(
+      "/product-catalog/1234?modal=true"
     );
   });
 
   it("throws error on invalid query parameter", () => {
     expect(() =>
-      console.log(way.parseQuery(root.products.edit, "dirty=asdf"))
+      console.log(way.parseQuery(root.productCatalog.edit, "dirty=asdf"))
     ).toThrow();
+  });
+
+  it("throws an error if invalid symbol is provided as argument", () => {
+    expect(() => {
+      const sym = Symbol("asdf");
+      root.productCatalog.edit(sym as any);
+    }).toThrow();
   });
 
   describe("relative paths", () => {
     it("builds empty relative root path", () => {
-      const productPath = root.products["1234"](way.rel);
+      const productPath = root.productCatalog["1234"](way.rel);
 
       expect(productPath({ modal: true })).toBe("?modal=true");
       expect(productPath({})).toBe("");
     });
 
     it("builds relative path", () => {
-      const productPath = root.products(way.rel);
+      const productPath = root.productCatalog(way.rel);
 
       expect(productPath["1234"].edit({ dirty: true })).toEqual(
         "1234/edit?dirty=true"
@@ -103,19 +113,33 @@ describe("way", () => {
   describe("routes", () => {
     it("builds absolute path", () => {
       expect(root(way.route)).toEqual("/");
-      expect(root.products(way.route)).toEqual("/products");
-      expect(root.products["1234"](way.route)).toEqual("/products/1234");
-      expect(root.products["1234"].details(way.route)).toEqual(
-        "/products/1234/details"
+      expect(root.productCatalog(way.route)).toEqual("/product-catalog");
+      expect(root.productCatalog["1234"](way.route)).toEqual(
+        "/product-catalog/1234"
+      );
+      expect(root.productCatalog["1234"].details(way.route)).toEqual(
+        "/product-catalog/1234/details"
       );
     });
 
     it("builds relative route", () => {
-      const productPath = root.products(way.rel);
+      const productPath = root.productCatalog(way.rel);
 
       expect(productPath(way.route)).toEqual("");
       expect(productPath["1234"](way.route)).toEqual("1234");
       expect(productPath["1234"].edit(way.route)).toEqual("1234/edit");
+    });
+  });
+
+  describe("formatSegment config", () => {
+    const rootUpper = way.root(schema, {
+      formatSegment: (segment) => segment.toUpperCase(),
+    });
+
+    it("formats segment to uppercase", () => {
+      expect(rootUpper.productCatalog["qwerq"].details()).toEqual(
+        "/PRODUCTCATALOG/QWERQ/DETAILS"
+      );
     });
   });
 });
@@ -141,5 +165,5 @@ const ProductEditQuery = zod.object({
   dirty: QueryBool,
 });
 
-const getSearch = (path: string): string =>
+const search = (path: string): string =>
   new URL(path, "http://example.com").search.slice(1);

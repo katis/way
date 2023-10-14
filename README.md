@@ -2,11 +2,11 @@
 
 ## Introduction
 
-`way` is a TypeScript library that makes it possible to define and create URL paths in a type safe manner.
+`way` is a TypeScript library that makes it possible to define and create type safe URL paths.
 It also supports handling query parameters in a type-safe way.
 
-You can customize both query serialization and query validation (parsing).
-`way` supports [Zod](https://zod.dev/) out of the box.
+Both query serialization and query parsing is configurable, but `way` supports
+[URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams) and [Zod](https://zod.dev/) out-of-the-box.
 
 ## Installation
 
@@ -17,8 +17,8 @@ npm install @katis/way
 ## Features
 
 - Define URL path schemas with both named and parameter segments.
-- Create URL paths with optional query parameters.
-- Parse URL paths to retrieve query parameters.
+- Create paths with optional query parameters.
+- Parse query parameters for a specific path in a type-safe manner.
 - Create partial paths for router libraries etc.
 
 ## Basic Usage
@@ -34,7 +34,7 @@ import { way } from "@katis/way";
 import zod from "zod";
 
 // Query parameters can be parsed into a type safe object by implementing a QueryParser.
-// way can use Zod types out of the box as a QueryParser.
+// way can use Zod types as QueryParser out-of-the-box.
 const RootQuery = zod.object({
   search: zod.string().optional(),
 });
@@ -51,8 +51,9 @@ const schema = {
   [way.path]: RootQuery,
   // routes can be nested to create your apps path hierarchy
   products: {
-    // way.param defines a path segment that can take arbitrary strings, here it's a product ID
-    [way.param]: {
+    // way.param.paramName defines a path segment that can take arbitrary strings
+    // paramName is not used for path building, but is useful for documentation purposes
+    [way.param.productId]: {
       [way.path]: ProductQuery,
       // details defined as a single path that takes no query parameters
       details: { [way.path]: way.NoQuery },
@@ -115,8 +116,7 @@ function Routes() {
 
 ### Custom query codec
 
-A query codec is an object that converts a query string to an object and back.
-It doesn't validate types, you can use a library like Zod for that.
+A query codec is an object that encodes and decodes a query string into a JS object and back.
 
 ```ts
 import queryString from "query-string";
@@ -135,4 +135,24 @@ const root = way.root(schema, { codec });
 const search = "?modal=true";
 const query = way.parseQuery(root.products["1234"], search);
 // query = { modal: true }
+```
+
+### Custom query parser
+
+Query parser is just an object with a `parse`-method. The type of the query is
+infered from the parser.
+
+```ts
+const DateQuery: way.QueryParser<{ date: Date }> = {
+  parse(obj) {
+    const date = new Date(obj.date as any);
+    if (isNaN(date.valueOf())) throw Error("Invalid date");
+    return { date };
+  },
+};
+
+const root = way.root({
+  [way.path]: DateQuery,
+});
+root({ date: new Date() });
 ```

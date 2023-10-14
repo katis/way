@@ -1,14 +1,11 @@
 import { type QueryCodec, urlSearchParamsCodec } from "./codec.js";
+import { kebabCase } from "./kebabCase.js";
+import { $param } from "./param.js";
 
 /** Mark a schema section as a path building segment. */
 export type path = typeof path;
 /** Mark a schema section as a path building segment. */
 export const path: unique symbol = Symbol("way/path");
-
-/** Mark the schema section as a parameter segment. */
-export type param = typeof param;
-/** Mark the schema section as a parameter segment. */
-export const param: unique symbol = Symbol("way/param");
 
 /** Pass to path to build a route string.  */
 export type route = typeof route;
@@ -27,7 +24,12 @@ export const root = <S extends Schema>(
 ): PathBuilder<S> =>
   proxyPathBuilder<S>(
     schema,
-    { relative: false, codec: urlSearchParamsCodec, ...config },
+    {
+      relative: false,
+      codec: urlSearchParamsCodec,
+      formatSegment: kebabCase,
+      ...config,
+    },
     []
   );
 
@@ -36,12 +38,14 @@ export type RootConfig = {
   relative: boolean;
   /** Codec for converting query string to object and back. */
   codec: QueryCodec;
+  /** Formats a schema segment to path string segment, by default converts to kebab-case. */
+  formatSegment: (segment: string) => string;
 };
 
 /** Basic shape for a way path schema. */
 export type Schema = {
   [path]?: QueryParser<any>;
-  [param]?: Schema;
+  [$param]?: Schema;
   [segment: string]: Schema;
 };
 
@@ -54,8 +58,8 @@ export type PathBuilder<S> = S extends HasPath<infer Q>
 
 type HasPath<Q> = { [path]: QueryParser<Q> };
 type NoPath<S> = Omit<S, typeof path>;
-type HasParam<S extends Schema> = { [param]: S };
-type NoParam<S> = Omit<S, typeof param>;
+type HasParam<S extends Schema> = { [$param]: S };
+type NoParam<S> = Omit<S, typeof $param>;
 
 /** A segment of a typed path. */
 export interface Segment {
@@ -183,7 +187,7 @@ const buildPath = (
   query?: AnyQuery
 ): string => {
   const prefix = config.relative ? "" : "/";
-  const path = prefix + parts.join("/");
+  const path = prefix + parts.map((s) => config.formatSegment(s)).join("/");
   if (query != null) {
     const search = config.codec.encode(query);
     if (search) return `${path}?${search}`;
@@ -197,7 +201,7 @@ const getSchema = (
 ): Schema | undefined => {
   let current: Schema | undefined = schema;
   for (const part of parts) {
-    current = current[part] ?? current[param];
+    current = current[part] ?? current[$param];
     if (!current) return undefined;
   }
   return current;

@@ -2,7 +2,6 @@ export { type QueryCodec, urlSearchParamsCodec } from "./codec.js";
 export {
   AnyQuery,
   NoQuery,
-  param,
   path,
   rel,
   parseQuery,
@@ -19,3 +18,4 @@ export type {
   Segment,
   Schema,
 } from "./way.js";
+export { param } from "./param.js";

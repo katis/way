@@ -1,6 +1,6 @@
 {
   "name": "@katis/way",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Create type-safe URL path builders using Proxies",
   "author": "Joni Katajamäki",
   "license": "ISC",
@@ -35,15 +35,14 @@
     "README.md"
   ],
   "scripts": {
-    "build": "npm run build:tsc && npm run build:tsup",
-    "build:tsup": "tsup --dts --format esm,cjs src/index.ts",
-    "build:tsc": "tsc -p tsconfig.json",
+    "build": "tsup --dts --format esm,cjs src/index.ts",
     "test": "vitest"
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
     "@types/node": "^18.18.1",
     "@types/qs": "^6.9.8",
+    "@vitest/coverage-v8": "^0.34.6",
     "query-string": "^8.1.0",
     "tsup": "^7.2.0",
     "typescript": "^5.2.2",
