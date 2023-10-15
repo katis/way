@@ -22,6 +22,11 @@ export const query: unique symbol = Symbol("way/query");
 /** Pass to path to parse a search string.  */
 export type query = typeof query;
 
+/** Pass to path to parse a search string.  */
+export const queryString: unique symbol = Symbol("way/queryString");
+/** Pass to path to parse a search string.  */
+export type queryString = typeof queryString;
+
 /** Create a root config  */
 export const root = <S extends Schema>(
   schema: S,
@@ -77,6 +82,7 @@ export interface Segment {
 export type PathSegment<Q> = Segment &
   BuildPath<Q> & {
     (querySymbol: query, search: string): Q;
+    (queryStringSymbol: queryString, query: Q): string;
   };
 
 /** Build a path string, with a provided query parameter. */
@@ -165,8 +171,15 @@ const target: ProxyHandler<ProxyTarget> = {
             typeof search === "string" ? config.codec.decode(search) : search
           );
         }
+        case queryString: {
+          if (search === undefined)
+            throw Error("No search string provided with way.query");
+          if (typeof search === "string")
+            throw Error("way.queryString expected an object");
+          return config.codec.encode(search);
+        }
         default:
-          throw Error(`Invalid symbol ${arg} provided to path builder`);
+          throw Error(`Invalid symbol ${String(arg)} provided to path builder`);
       }
     }
     return buildPath(config, parts, arg);
@@ -174,7 +187,7 @@ const target: ProxyHandler<ProxyTarget> = {
 };
 
 type ApplyArgs = [
-  query | rel | route | AnyQuery | undefined,
+  query | queryString | rel | route | AnyQuery | undefined,
   string | AnyQuery | undefined,
   ...unknown[]
 ];

@@ -146,6 +146,18 @@ describe("way", () => {
       );
     });
   });
+
+  describe("way.queryString", () => {
+    it("returns empty query string", () => {
+      expect(root.productCatalog["1234"](way.queryString, {})).toEqual("");
+    });
+
+    it("returns encoded query string", () => {
+      expect(
+        root.productCatalog["1234"](way.queryString, { modal: true })
+      ).toEqual("modal=true");
+    });
+  });
 });
 
 const QueryBool = zod
