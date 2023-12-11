@@ -139,12 +139,19 @@ const proxyTarget = (
 };
 
 const target: ProxyHandler<ProxyTarget> = {
-  get(
-    { schema, config, parts },
-    prop: string | symbol
-  ): PathBuilder<any> | (() => string) | undefined {
-    if (typeof prop === "string")
-      return proxyPathBuilder(schema, config, [...parts, prop]);
+  get({ schema, config, parts }, prop: string | symbol): any {
+    if (typeof prop === "string") {
+      switch (prop) {
+        case "apply":
+          return (_this: unknown, args: any) =>
+            (proxyPathBuilder(schema, config, parts) as any)(...args);
+        case "call":
+          return (_this: unknown, ...args: any) =>
+            (proxyPathBuilder(schema, config, parts) as any)(...args);
+        default:
+          return proxyPathBuilder(schema, config, [...parts, prop]);
+      }
+    }
     if (prop === Symbol.toPrimitive) return () => buildPath(config, parts);
   },
   apply(

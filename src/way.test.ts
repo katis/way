@@ -158,6 +158,39 @@ describe("way", () => {
       ).toEqual("modal=true");
     });
   });
+
+  describe("Function methods", () => {
+    it("builds with .apply", () => {
+      const result = root.productCatalog["1234"].apply(null, [
+        { modal: true },
+      ] as any);
+      expect(result).toBe("/product-catalog/1234?modal=true");
+    });
+
+    it("builds with .call", () => {
+      const result = (root.productCatalog["1234"].call as any)(null, {
+        modal: false,
+      });
+      expect(result).toBe("/product-catalog/1234?modal=false");
+    });
+
+    it("returns query with .apply", () => {
+      const result = (root.productCatalog["1234"].apply as any)(null, [
+        way.query,
+        "modal=true",
+      ]);
+      expect(result).toEqual({ modal: true });
+    });
+
+    it("returns query with .call", () => {
+      const result = (root.productCatalog["1234"].call as any)(
+        null,
+        way.query,
+        "modal=true"
+      );
+      expect(result).toEqual({ modal: true });
+    });
+  });
 });
 
 const QueryBool = zod
